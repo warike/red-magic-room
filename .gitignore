@@ -1,0 +1,30 @@
+# Build artifacts
+.build/
+dist/
+*.app
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode (if used)
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# IDE
+.idea/
+.vscode/
+
+# Archives
+*.zip
+*.tar.gz
+*.dmg
