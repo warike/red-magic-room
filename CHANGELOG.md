@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/warike/red-magic-room/compare/v1.0.1...v1.0.2) (2026-02-06)
+
+
+### Bug Fixes
+
+* re-trigger release with CI fix ([03ba26c](https://github.com/warike/red-magic-room/commit/03ba26c0259d68436fefaa22c5522b34e7680535))
+
 ## [1.0.1](https://github.com/warike/red-magic-room/compare/v1.0.0...v1.0.1) (2026-02-06)
 
 
