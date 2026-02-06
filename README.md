@@ -18,6 +18,13 @@ A minimalist macOS menu bar app that generates ambient noise to help you focus.
 
 ## Installation
 
+### Homebrew (Recommended)
+
+```bash
+brew tap warike/tools
+brew install --cask red-magic-room
+```
+
 ### Download Release
 
 Download the latest `RedMagicRoom.zip` from [Releases](https://github.com/warike/red-magic-room/releases).
