@@ -4,6 +4,10 @@ cd "$(dirname "$0")"
 
 echo "🔨 Building Red Magic Room..."
 
+# Clean dist and build artifacts
+rm -rf dist
+mkdir -p dist
+
 # Kill running instances
 pkill -x RedMagicRoom 2>/dev/null
 
