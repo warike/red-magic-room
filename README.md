@@ -5,6 +5,7 @@ A minimalist macOS menu bar app that generates ambient noise to help you focus.
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
 ![Swift 5.9+](https://img.shields.io/badge/Swift-5.9%2B-orange)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
+[![Dependabot](https://badgen.net/badge/Dependabot/enabled/green?icon=dependabot)](https://dependabot.com/)
 
 ## Features
 
@@ -84,7 +85,14 @@ red-magic-room/
 
 ## Contributing
 
-Contributions are welcome! Please open an issue first to discuss what you'd like to change.
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) to get started. It covers:
+- Development workflow
+- Conventional Commits (required for automated releases)
+- Building the app locally
+
+## Security
+
+We take security seriously. Please read our [Security Policy](SECURITY.md) to learn about supported versions and how to report vulnerabilities.
 
 ## License
 
