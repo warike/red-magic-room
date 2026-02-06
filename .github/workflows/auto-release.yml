@@ -114,3 +114,34 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag_name }}
           files: dist/RedMagicRoom.zip
           fail_on_unmatched_files: true
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: warike
+          repositories: homebrew-tools
+
+      - name: Update Homebrew cask
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag_name }}"
+          VERSION="${TAG#v}"
+          SHA=$(shasum -a 256 dist/RedMagicRoom.zip | awk '{print $1}')
+
+          echo "Updating Homebrew cask to version ${VERSION} (sha256: ${SHA})"
+
+          git clone https://x-access-token:${GH_TOKEN}@github.com/warike/homebrew-tools.git /tmp/homebrew-tools
+          cd /tmp/homebrew-tools
+
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/red-magic-room.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/red-magic-room.rb
+
+          git config user.name "warike-release-bot[bot]"
+          git config user.email "bot@users.noreply.github.com"
+          git add Casks/red-magic-room.rb
+          git commit -m "chore: bump red-magic-room to ${VERSION}"
+          git push
