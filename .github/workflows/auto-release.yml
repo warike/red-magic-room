@@ -108,6 +108,35 @@ jobs:
       - name: Build and Sign
         run: ./build.sh
 
+      - name: Notarize app
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+        run: |
+          # Write API key to file
+          API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printenv APPLE_API_PRIVATE_KEY > "$API_KEY_PATH"
+
+          # Submit for notarization and wait
+          xcrun notarytool submit dist/RedMagicRoom.zip \
+            --key "$API_KEY_PATH" \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER_ID" \
+            --wait
+
+          # Staple the notarization ticket to the app
+          xcrun stapler staple dist/RedMagicRoom.app
+
+          # Re-zip with the stapled ticket
+          cd dist
+          rm -f RedMagicRoom.zip
+          zip -r RedMagicRoom.zip RedMagicRoom.app
+          cd ..
+
+          # Clean up
+          rm -f "$API_KEY_PATH"
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
