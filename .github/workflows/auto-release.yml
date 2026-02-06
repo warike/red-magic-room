@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Existing tag to build and release (e.g. v1.0.2)'
+        required: true
 
 permissions:
   contents: write
@@ -12,6 +17,7 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -27,16 +33,26 @@ jobs:
 
   build-release:
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ always() && (needs.release-please.outputs.release_created || github.event_name == 'workflow_dispatch') }}
     runs-on: macos-14
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag_name=${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set Version in Info.plist
         run: |
-          VERSION="${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}"
+          TAG="${{ steps.tag.outputs.tag_name }}"
+          VERSION="${TAG#v}"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" RedMagicRoom/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" RedMagicRoom/Info.plist
           echo "Updated Info.plist to version $VERSION"
@@ -51,23 +67,43 @@ jobs:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
         run: |
-          # create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
-          # import certificate and provisioning profile from secrets
-          echo "Secret length: ${#BUILD_CERTIFICATE_BASE64}"
-          echo "$BUILD_CERTIFICATE_BASE64" | openssl base64 -d -A -out $CERTIFICATE_PATH
+          # Write secret to file using printenv to avoid shell interpretation issues
+          printenv BUILD_CERTIFICATE_BASE64 > "$RUNNER_TEMP/cert_b64.txt"
 
-          # create temporary keychain
-          security create-keychain -p "" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "" $KEYCHAIN_PATH
+          # Validate the secret was loaded
+          CERT_SIZE=$(wc -c < "$RUNNER_TEMP/cert_b64.txt")
+          echo "Certificate base64 size: ${CERT_SIZE} bytes"
+          if [ "$CERT_SIZE" -lt 100 ]; then
+            echo "::error::BUILD_CERTIFICATE_BASE64 secret appears too small (${CERT_SIZE} bytes). Please re-set the secret."
+            exit 1
+          fi
 
-          # import certificate to keychain
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
+          # Decode certificate from file (avoids pipe/echo issues)
+          base64 -d -i "$RUNNER_TEMP/cert_b64.txt" -o "$CERTIFICATE_PATH"
+
+          # Verify decoded file
+          P12_SIZE=$(wc -c < "$CERTIFICATE_PATH")
+          echo "Decoded certificate size: ${P12_SIZE} bytes"
+          if [ "$P12_SIZE" -lt 100 ]; then
+            echo "::error::Decoded certificate is too small (${P12_SIZE} bytes). The secret may not be properly base64-encoded."
+            exit 1
+          fi
+
+          # Clean up base64 temp file
+          rm -f "$RUNNER_TEMP/cert_b64.txt"
+
+          # Create temporary keychain
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+
+          # Import certificate to keychain
+          security import "$CERTIFICATE_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
 
       - name: Build and Sign
         run: ./build.sh
@@ -75,6 +111,6 @@ jobs:
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          tag_name: ${{ steps.tag.outputs.tag_name }}
           files: dist/RedMagicRoom.zip
           fail_on_unmatched_files: true
