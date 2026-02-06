@@ -22,6 +22,18 @@ cp .build/release/RedMagicRoom dist/RedMagicRoom.app/Contents/MacOS/RedMagicRoom
 cp RedMagicRoom/Info.plist dist/RedMagicRoom.app/Contents/
 cp AppIcon.icns dist/RedMagicRoom.app/Contents/Resources/
 
+echo "certifying..."
+# Sign the app bundle
+IDENTITY="${CODESIGN_IDENTITY:-Developer ID Application: Sergio Cardenas (MJ749QCA6J)}"
+
+# Check if the identity exists in the keychain
+if security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
+    codesign --force --options runtime --deep --sign "$IDENTITY" --entitlements RedMagicRoom/RedMagicRoom.entitlements dist/RedMagicRoom.app
+else
+    echo "⚠️ Signing identity not found: $IDENTITY"
+    echo "⚠️ Skipping signing..."
+fi
+
 # Create zip for sharing
 cd dist
 rm -f RedMagicRoom.zip

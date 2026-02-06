@@ -63,8 +63,8 @@ Click the active noise type again to stop playback.
 
 ```
 red-magic-room/
-├── AmbientNoise/
-│   ├── AmbientNoiseApp.swift   # App entry, MenuBarExtra
+├── RedMagicRoom/
+│   ├── RedMagicRoomApp.swift   # App entry, MenuBarExtra
 │   ├── ContentView.swift       # Popover UI
 │   ├── NoiseEngine.swift       # AVAudioEngine noise generation
 │   ├── NoiseType.swift         # Noise type enum

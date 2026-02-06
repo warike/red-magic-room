@@ -21,17 +21,30 @@ jobs:
         with:
           swift-version: "5.9"
 
-      - name: Build Release
-        run: swift build -c release
-
-      - name: Create App Bundle
+      - name: Install the Apple certificate
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
         run: |
-          mkdir -p dist/RedMagicRoom.app/Contents/MacOS
-          mkdir -p dist/RedMagicRoom.app/Contents/Resources
-          cp .build/release/RedMagicRoom dist/RedMagicRoom.app/Contents/MacOS/RedMagicRoom
-          cp RedMagicRoom/Info.plist dist/RedMagicRoom.app/Contents/
-          cp AppIcon.icns dist/RedMagicRoom.app/Contents/Resources/
-          cd dist && zip -r RedMagicRoom.zip RedMagicRoom.app
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
+
+          # create temporary keychain
+          security create-keychain -p "" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+      - name: Build and Sign Release
+        run: ./build.sh
 
       - name: Get version
         id: version
