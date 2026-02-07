@@ -172,19 +172,11 @@ jobs:
           git config user.name "warike-release-bot[bot]"
           git config user.email "bot@users.noreply.github.com"
 
-          BRANCH="chore/bump-red-magic-room-${VERSION}"
-          git checkout -b "$BRANCH"
           git add Casks/red-magic-room.rb
 
           if git diff --staged --quiet; then
             echo "No changes to the cask file. Skipping."
           else
             git commit -m "chore: bump red-magic-room to ${VERSION}"
-            git push -u origin "$BRANCH"
-            gh pr create \
-              --repo warike/homebrew-tools \
-              --title "chore: bump red-magic-room to ${VERSION}" \
-              --body "Automated cask update for Red Magic Room v${VERSION}" \
-              --base main \
-              --head "$BRANCH"
+            git push
           fi
