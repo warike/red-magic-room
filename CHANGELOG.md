@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/warike/red-magic-room/compare/v1.0.2...v1.0.3) (2026-02-07)
+
+
+### Bug Fixes
+
+* create PR instead of pushing directly to homebrew-tools ([c4f541d](https://github.com/warike/red-magic-room/commit/c4f541d62f32cf5f650ae8bfa6163fd2ec5ae55f))
+* revert to direct push for homebrew-tools updates ([2d36804](https://github.com/warike/red-magic-room/commit/2d36804c8569507bfc26e19ffe1ed2b6ebfd5be4))
+
 ## [1.0.2](https://github.com/warike/red-magic-room/compare/v1.0.1...v1.0.2) (2026-02-06)
 
 
